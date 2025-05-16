@@ -9,39 +9,31 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
+function getFirstBagOfType(p12, bagType) {
+  const result = p12.getBags({ bagType });
+  const bags = result?.[bagType];
+  if (Array.isArray(bags) && bags.length > 0) {
+    return bags[0];
+  }
+  return null;
+}
+
 function signWithForge(manifest, p12Base64, password) {
   console.log("🔍 Extracting bags from P12...");
   const binary = Buffer.from(p12Base64, 'base64').toString('binary');
   const asn1 = forge.asn1.fromDer(forge.util.createBuffer(binary));
   const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, password);
 
-  const allBags = p12.getBags();
-  for (const type in allBags) {
-    const bags = allBags[type];
-    console.log(`📦 Bag type: ${type}, Count: ${bags?.length || 0}`);
-    if (Array.isArray(bags)) {
-      bags.forEach((bag, i) => {
-        console.log(`  └─ [${i}] Name: ${bag?.friendlyName || 'N/A'}`);
-        if (bag?.cert) console.log("    ✅ Found Certificate");
-        if (bag?.key) console.log("    🔑 Found Private Key");
-      });
-    }
-  }
+  const certBag = getFirstBagOfType(p12, forge.pki.oids.certBag);
+  const keyBag = getFirstBagOfType(p12, forge.pki.oids.keyBag) ||
+                 getFirstBagOfType(p12, forge.pki.oids.pkcs8ShroudedKeyBag);
 
-  const certBagResult = p12.getBags({ bagType: forge.pki.oids.certBag });
-  const certBags = certBagResult?.[forge.pki.oids.certBag] || [];
-  const cert = certBags[0]?.cert;
-
-  const keyBagResult = p12.getBags({ bagType: forge.pki.oids.keyBag });
-  const keyBags = keyBagResult?.[forge.pki.oids.keyBag] || [];
-
-  const shroudedBagResult = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
-  const shroudedBags = shroudedBagResult?.[forge.pki.oids.pkcs8ShroudedKeyBag] || [];
-
-  const key = keyBags[0]?.key || shroudedBags[0]?.key;
+  const cert = certBag?.cert;
+  const key = keyBag?.key;
 
   if (!cert || !key) {
-    throw new Error("Error: Missing cert or key");
+    console.error("🛑 Missing cert or key in parsed bags.");
+    throw new Error("Missing cert or key");
   }
 
   const p7 = forge.pkcs7.createSignedData();
