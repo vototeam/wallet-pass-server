@@ -4,36 +4,36 @@ import forge from 'node-forge';
 import JSZip from 'jszip';
 import fetch from 'node-fetch';
 import fs from 'fs';
+import crypto from 'crypto';
 
 dotenv.config();
+
 const app = express();
 app.use(express.json());
 
-function getFirstBagOfType(p12, bagType) {
-  const result = p12.getBags({ bagType });
-  const bags = result?.[bagType];
-  if (Array.isArray(bags) && bags.length > 0) {
-    return bags[0];
+function generateManifest(files) {
+  const manifest = {};
+  for (const [filename, buffer] of Object.entries(files)) {
+    const hash = crypto.createHash('sha1').update(buffer).digest('hex');
+    manifest[filename] = hash;
   }
-  return null;
+  return manifest;
 }
 
 function signWithForge(manifest, p12Base64, password) {
-  console.log("🔍 Extracting bags from P12...");
   const binary = Buffer.from(p12Base64, 'base64').toString('binary');
   const asn1 = forge.asn1.fromDer(forge.util.createBuffer(binary));
   const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, password);
 
-  const certBag = getFirstBagOfType(p12, forge.pki.oids.certBag);
-  const keyBag = getFirstBagOfType(p12, forge.pki.oids.keyBag) ||
-                 getFirstBagOfType(p12, forge.pki.oids.pkcs8ShroudedKeyBag);
+  const certBag = p12.getBags({ bagType: forge.pki.oids.certBag })?.[forge.pki.oids.certBag]?.[0];
+  const keyBag = p12.getBags({ bagType: forge.pki.oids.keyBag })?.[forge.pki.oids.keyBag]?.[0] ||
+                 p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })?.[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0];
 
   const cert = certBag?.cert;
   const key = keyBag?.key;
 
   if (!cert || !key) {
-    console.error("🛑 Missing cert or key in parsed bags.");
-    throw new Error("Missing cert or key");
+    throw new Error('Missing cert or key');
   }
 
   const p7 = forge.pkcs7.createSignedData();
@@ -56,77 +56,64 @@ function signWithForge(manifest, p12Base64, password) {
 app.post('/generate', async (req, res) => {
   try {
     const { make, model, year, plate } = req.body;
-    const manifest = JSON.stringify({ make, model, year, plate });
-
-    const p12Base64 = process.env.PASSKIT_P12_BASE64;
-    const password = process.env.PASSKIT_P12_PASSWORD || '';
-
-    console.log("ENV length:", p12Base64?.length);
-console.log("ENV preview:", p12Base64?.slice(0, 100));
-    
-    const iconUrl = process.env.PASSKIT_ICON_URL || 'https://qlxnmbgtohaiyhbzfvvc.supabase.co/storage/v1/object/public/passkitfiles/icon.png';
-
-    const signature = signWithForge(manifest, p12Base64, password);
-
-    const iconRes = await fetch(iconUrl);
-    if (!iconRes.ok) throw new Error('Failed to fetch icon');
-    const iconBuffer = Buffer.from(await iconRes.arrayBuffer());
-
-    const passJson = {
+    const passData = {
       description: "Vehicle Service Pass",
       formatVersion: 1,
       organizationName: "SHFT",
       passTypeIdentifier: "pass.com.shft.cardocs",
       serialNumber: plate,
-      teamIdentifier: "V7AFS9KVXW", // Replace this with your actual Apple Developer Team ID
-      backgroundColor: "rgb(255,255,255)",
-      labelColor: "rgb(0,0,0)",
-      foregroundColor: "rgb(0,0,0)",
+      teamIdentifier: "V7AFS9KVXW",
+      backgroundColor: "#FFFFFF",
+      labelColor: "#000000",
+      foregroundColor: "#000000",
       generic: {
-        primaryFields: [
-          {
-            key: "vehicle",
-            label: "Vehicle",
-            value: `${year} ${make} ${model}`
-          }
-        ],
-        auxiliaryFields: [
-          {
-            key: "plate",
-            label: "License Plate",
-            value: plate
-          }
-        ]
+        primaryFields: [{ key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }],
+        auxiliaryFields: [{ key: "plate", label: "License Plate", value: plate }]
       }
     };
 
-    const zip = new JSZip();
-    zip.file('manifest.json', Buffer.from(manifest));
-    zip.file('signature', Buffer.from(signature));
-    zip.file('icon.png', iconBuffer);
-    zip.file('pass.json', JSON.stringify(passJson, null, 2));
+    const passJSON = Buffer.from(JSON.stringify(passData));
 
-    console.log("manifest:", manifest);
-console.log("signature length:", signature?.length);
-console.log("iconBuffer length:", iconBuffer?.length || iconBuffer?.byteLength);
-console.log("pass.json preview:", JSON.stringify(passJson).substring(0, 100));
+    const p12Base64 = process.env.PASSKIT_P12_BASE64;
+    const password = process.env.PASSKIT_P12_PASSWORD || '';
+    const iconUrl = process.env.PASSKIT_ICON_URL || 'https://qlxnmbgtohaiyhbzfvvc.supabase.co/storage/v1/object/public/passkitfiles/icon.png';
+    const icon2xUrl = process.env.PASSKIT_ICON2X_URL || iconUrl;
+
+    const iconRes = await fetch(iconUrl);
+    const icon2xRes = await fetch(icon2xUrl);
+
+    if (!iconRes.ok || !icon2xRes.ok) throw new Error('Failed to fetch icon(s)');
+
+    const iconBuffer = Buffer.from(await iconRes.arrayBuffer());
+    const icon2xBuffer = Buffer.from(await icon2xRes.arrayBuffer());
+
+    const fileBuffers = {
+      'pass.json': passJSON,
+      'icon.png': iconBuffer,
+      'icon@2x.png': icon2xBuffer
+    };
+
+    const manifestObject = generateManifest(fileBuffers);
+    const manifestJSON = Buffer.from(JSON.stringify(manifestObject));
+    const signature = signWithForge(manifestJSON.toString(), p12Base64, password);
+
+    const zip = new JSZip();
+    zip.file('pass.json', passJSON);
+    zip.file('manifest.json', manifestJSON);
+    zip.file('signature', signature, { binary: true });
+    zip.file('icon.png', iconBuffer);
+    zip.file('icon@2x.png', icon2xBuffer);
 
     const pkpass = await zip.generateAsync({ type: 'nodebuffer' });
-    console.log("Generated pkpass buffer size:", pkpass.length);
-
-    // Optional: Save locally for testing
-    //fs.writeFileSync('mycar.pkpass', pkpass);
 
     res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
     res.setHeader('Content-Disposition', 'attachment; filename=mycar.pkpass');
     res.send(pkpass);
   } catch (err) {
-    console.error('GENERATION ERROR:', err);
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚗 Wallet pass server running on port ${PORT}`));
