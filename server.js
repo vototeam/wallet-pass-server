@@ -69,15 +69,17 @@ app.post('/generate', async (req, res) => {
       logoText: "SHFT Pass",
       logo: "logo.png",
       generic: {
+
+        headerFields: [
+          { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }
+        ],
         
         secondaryFields: [
-          { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` },
-          { key: "transmission", label: "Transmission", value: transmission }
-          
+          { key: "transmission", label: "Transmission", value: transmission },
+           { key: "fuel", label: "Fuel Type", value: fuelType },
         ],
         auxiliaryFields: [
           
-          { key: "fuel", label: "Fuel Type", value: fuelType },
           { key: "plate", label: "License Plate", value: plate },
           { key: "body", label: "Body Type", value: bodyType }
         ]
