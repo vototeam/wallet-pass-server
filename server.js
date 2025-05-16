@@ -71,10 +71,10 @@ app.post('/generate', async (req, res) => {
       storeCard: {
 
         headerFields: [
-          { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }
+          { key: "IDtype", label: "Digital Card Type", value: "Car Documentation" }
         ],
         
-       // primaryFields: [ { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }],
+        primaryFields: [ { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }],
         
         auxiliaryFields: [
           { key: "transmission", label: "Transmission", value: transmission },
@@ -100,10 +100,17 @@ app.post('/generate', async (req, res) => {
 
     const iconBuffer = await readFile('./icon.png');
     const icon2xBuffer = await readFile('./icon@2x.png');
-
-    const logoBuffer = await readFile('./logo.png');
 const stripBuffer = await readFile('./strip.png');
     //const thumbnailBuffer = await readFile('./thumbnail.png');
+    
+    let logoBuffer;
+    if (logoUrl) {
+      const logoRes = await fetch(logoUrl);
+      if (!logoRes.ok) throw new Error('Failed to fetch dynamic logo from provided URL');
+      logoBuffer = Buffer.from(await logoRes.arrayBuffer());
+    } else {
+      logoBuffer = await readFile('./logo.png');
+    }
 
 const fileBuffers = {
   'pass.json': passJSON,
