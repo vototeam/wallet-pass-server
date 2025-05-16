@@ -6,6 +6,7 @@ import fetch from 'node-fetch';
 import fs from 'fs';
 import crypto from 'crypto';
 
+
 dotenv.config();
 
 const app = express();
@@ -80,16 +81,13 @@ app.post('/generate', async (req, res) => {
 
     const p12Base64 = process.env.PASSKIT_P12_BASE64;
     const password = process.env.PASSKIT_P12_PASSWORD || '';
-    const iconUrl = process.env.PASSKIT_ICON_URL || 'https://qlxnmbgtohaiyhbzfvvc.supabase.co/storage/v1/object/public/passkitfiles//icon.png';
-    const icon2xUrl = process.env.PASSKIT_ICON2X_URL || 'https://qlxnmbgtohaiyhbzfvvc.supabase.co/storage/v1/object/public/passkitfiles//icon@2x.png';
+    
+      // ✅ Load icons from root directory
+    const iconBuffer = await fs.readFile('./icon.png');
+    const icon2xBuffer = await fs.readFile('./icon@2x.png');
 
     const iconRes = await fetch(iconUrl);
     const icon2xRes = await fetch(icon2xUrl);
-
-    if (!iconRes.ok || !icon2xRes.ok) throw new Error('Failed to fetch icon(s)');
-
-    const iconBuffer = Buffer.from(await iconRes.arrayBuffer());
-    const icon2xBuffer = Buffer.from(await icon2xRes.arrayBuffer());
 
     const fileBuffers = {
       'pass.json': passJSON,
