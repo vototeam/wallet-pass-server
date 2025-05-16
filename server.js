@@ -48,6 +48,10 @@ app.post('/generate', async (req, res) => {
 
     const p12Base64 = process.env.PASSKIT_P12_BASE64;
     const password = process.env.PASSKIT_P12_PASSWORD || '';
+
+    console.log("ENV length:", p12Base64?.length);
+console.log("ENV preview:", p12Base64?.slice(0, 100));
+    
     const iconUrl = process.env.PASSKIT_ICON_URL || 'https://qlxnmbgtohaiyhbzfvvc.supabase.co/storage/v1/object/public/passkitfiles/icon.png';
 
     const signature = signWithForge(manifest, p12Base64, password);
