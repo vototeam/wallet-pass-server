@@ -78,7 +78,7 @@ app.post('/generate', async (req, res) => {
       formatVersion: 1,
       organizationName: "SHFT",
       passTypeIdentifier: "pass.com.shft.cardocs",
-      serialNumber: plate,
+      serialNumber: vinNum,
       teamIdentifier: "V7AFS9KVXW",
       backgroundColor: "#ffffff",
       labelColor: "#01D046",
