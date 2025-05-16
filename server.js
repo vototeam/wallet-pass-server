@@ -6,7 +6,6 @@ import fetch from 'node-fetch';
 import fs from 'fs';
 
 dotenv.config();
-
 const app = express();
 app.use(express.json());
 
@@ -38,7 +37,8 @@ function signWithForge(manifest, p12Base64, password) {
     ],
   });
 
-  return Buffer.from(forge.asn1.toDer(p7.toAsn1()).getBytes(), 'binary');
+  const signedBytes = forge.asn1.toDer(p7.toAsn1()).getBytes();
+  return Buffer.from(signedBytes, 'binary');
 }
 
 app.post('/generate', async (req, res) => {
@@ -54,23 +54,23 @@ app.post('/generate', async (req, res) => {
 
     const iconRes = await fetch(iconUrl);
     if (!iconRes.ok) throw new Error('Failed to fetch icon');
-    const iconBuffer = await iconRes.arrayBuffer();
+    const iconBuffer = Buffer.from(await iconRes.arrayBuffer());
 
     const zip = new JSZip();
-    zip.file('manifest.json', manifest);
-    zip.file('signature', Buffer.from(signature), { binary: true });
-    zip.file('icon.png', Buffer.from(iconBuffer), { binary: true });
+    zip.file('manifest.json', Buffer.from(manifest));
+    zip.file('signature', signature);
+    zip.file('icon.png', iconBuffer);
 
     const pkpass = await zip.generateAsync({ type: 'nodebuffer' });
 
-    // Optional debug write
+    // Optional: Save locally for testing
     fs.writeFileSync('mycar.pkpass', pkpass);
 
     res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
     res.setHeader('Content-Disposition', 'attachment; filename=mycar.pkpass');
     res.send(pkpass);
   } catch (err) {
-    console.error(err);
+    console.error('GENERATION ERROR:', err);
     res.status(500).json({ error: err.message });
   }
 });
