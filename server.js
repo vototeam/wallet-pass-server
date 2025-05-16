@@ -68,6 +68,7 @@ app.post('/generate', async (req, res) => {
       foregroundColor: "#ffffff",
       "sharingProhibited": true,
       "logoText": "SHFT Pass",
+      "logo": "logo.png",
       generic: {
         primaryFields: [{ key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }],
         secondaryFields: [{ key: "transmission", label: "Transmission", value: transmission }, {key: "fuel", label: "Fuel Type", value: fuelType}],
