@@ -90,10 +90,16 @@ app.post('/generate', async (req, res) => {
     zip.file('icon.png', iconBuffer);
     zip.file('pass.json', JSON.stringify(passJson, null, 2));
 
+    console.log("manifest:", manifest);
+console.log("signature length:", signature?.length);
+console.log("iconBuffer length:", iconBuffer?.length || iconBuffer?.byteLength);
+console.log("pass.json preview:", JSON.stringify(passJson).substring(0, 100));
+
     const pkpass = await zip.generateAsync({ type: 'nodebuffer' });
+    console.log("Generated pkpass buffer size:", pkpass.length);
 
     // Optional: Save locally for testing
-    fs.writeFileSync('mycar.pkpass', pkpass);
+    //fs.writeFileSync('mycar.pkpass', pkpass);
 
     res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
     res.setHeader('Content-Disposition', 'attachment; filename=mycar.pkpass');
