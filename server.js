@@ -63,8 +63,8 @@ app.post('/generate', async (req, res) => {
       passTypeIdentifier: "pass.com.shft.cardocs",
       serialNumber: plate,
       teamIdentifier: "V7AFS9KVXW",
-      backgroundColor: "#FFFFFF",
-      labelColor: "#000000",
+      backgroundColor: "#01D046",
+      labelColor: "#ffffff",
       foregroundColor: "#000000",
       "sharingProhibited": true,
       generic: {
