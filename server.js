@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import forge from 'node-forge';
 import JSZip from 'jszip';
 import fetch from 'node-fetch';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -57,10 +58,13 @@ app.post('/generate', async (req, res) => {
 
     const zip = new JSZip();
     zip.file('manifest.json', manifest);
-    zip.file('signature', signature, { binary: true });
-    zip.file('icon.png', iconBuffer);
+    zip.file('signature', Buffer.from(signature), { binary: true });
+    zip.file('icon.png', Buffer.from(iconBuffer), { binary: true });
 
     const pkpass = await zip.generateAsync({ type: 'nodebuffer' });
+
+    // Optional debug write
+    fs.writeFileSync('mycar.pkpass', pkpass);
 
     res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
     res.setHeader('Content-Disposition', 'attachment; filename=mycar.pkpass');
