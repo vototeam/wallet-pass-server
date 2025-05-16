@@ -10,32 +10,38 @@ const app = express();
 app.use(express.json());
 
 function signWithForge(manifest, p12Base64, password) {
+  console.log("🔍 Extracting bags from P12...");
   const binary = Buffer.from(p12Base64, 'base64').toString('binary');
   const asn1 = forge.asn1.fromDer(forge.util.createBuffer(binary));
   const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, password);
 
-  console.log("🧪 Extracting bags from P12...");
   const allBags = p12.getBags();
-
   for (const type in allBags) {
     const bags = allBags[type];
-    console.log(`Found bag type: ${type} with ${bags.length} entries`);
-    bags.forEach((bag, i) => {
-      console.log(`  Index ${i}: FriendlyName = ${bag.friendlyName}`);
-      if (bag.cert) console.log("   ✅ Found certificate");
-      if (bag.key) console.log("   🔑 Found key");
-    });
+    console.log(`📦 Bag type: ${type}, Count: ${bags?.length || 0}`);
+    if (Array.isArray(bags)) {
+      bags.forEach((bag, i) => {
+        console.log(`  └─ [${i}] Name: ${bag?.friendlyName || 'N/A'}`);
+        if (bag?.cert) console.log("    ✅ Found Certificate");
+        if (bag?.key) console.log("    🔑 Found Private Key");
+      });
+    }
   }
 
-  const certBags = p12.getBags({ bagType: forge.pki.oids.certBag })?.certBags;
-  const keyBags = p12.getBags({ bagType: forge.pki.oids.keyBag })?.keyBags;
-  const shroudedBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })?.pkcs8ShroudedKeyBag;
+  const certBagResult = p12.getBags({ bagType: forge.pki.oids.certBag });
+  const certBags = certBagResult?.[forge.pki.oids.certBag] || [];
+  const cert = certBags[0]?.cert;
 
-  const cert = certBags?.[0]?.cert;
-  const key = keyBags?.[0]?.key || shroudedBags?.[0]?.key;
+  const keyBagResult = p12.getBags({ bagType: forge.pki.oids.keyBag });
+  const keyBags = keyBagResult?.[forge.pki.oids.keyBag] || [];
+
+  const shroudedBagResult = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
+  const shroudedBags = shroudedBagResult?.[forge.pki.oids.pkcs8ShroudedKeyBag] || [];
+
+  const key = keyBags[0]?.key || shroudedBags[0]?.key;
 
   if (!cert || !key) {
-    throw new Error('Missing cert or key');
+    throw new Error("Error: Missing cert or key");
   }
 
   const p7 = forge.pkcs7.createSignedData();
