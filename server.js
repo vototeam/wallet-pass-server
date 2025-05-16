@@ -1,8 +1,7 @@
-// server.js
 import express from 'express';
-import JSZip from 'jszip';
-import forge from 'node-forge';
 import dotenv from 'dotenv';
+import forge from 'node-forge';
+import JSZip from 'jszip';
 import fetch from 'node-fetch';
 
 dotenv.config();
@@ -12,17 +11,17 @@ app.use(express.json());
 
 function signWithForge(manifest, p12Base64, password) {
   const binary = Buffer.from(p12Base64, 'base64').toString('binary');
-  const p12Asn1 = forge.asn1.fromDer(binary);
-  const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, password);
+  const asn1 = forge.asn1.fromDer(forge.util.createBuffer(binary));
+  const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, password);
 
-  const certBags = p12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag] || [];
-  const keyBags = p12.getBags({ bagType: forge.pki.oids.keyBag })[forge.pki.oids.keyBag] || [];
-  const shroudedKeyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[forge.pki.oids.pkcs8ShroudedKeyBag] || [];
+  const certBags = p12.getBags({ bagType: forge.pki.oids.certBag }).certBags;
+  const keyBags = p12.getBags({ bagType: forge.pki.oids.keyBag }).keyBags;
+  const shroudedBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag }).pkcs8ShroudedKeyBag;
 
-  const cert = certBags[0]?.cert;
-  const key = keyBags[0]?.key || shroudedKeyBags[0]?.key;
+  const cert = certBags?.[0]?.cert;
+  const key = keyBags?.[0]?.key || shroudedBags?.[0]?.key;
 
-  if (!cert || !key) throw new Error('Certificate or private key not found in P12');
+  if (!cert || !key) throw new Error('Missing cert or key');
 
   const p7 = forge.pkcs7.createSignedData();
   p7.content = forge.util.createBuffer(manifest);
@@ -38,33 +37,31 @@ function signWithForge(manifest, p12Base64, password) {
     ],
   });
 
-  const signature = forge.asn1.toDer(p7.toAsn1()).getBytes();
-  return Buffer.from(signature, 'binary');
+  return Buffer.from(forge.asn1.toDer(p7.toAsn1()).getBytes(), 'binary');
 }
 
-app.post('/generate-pass', async (req, res) => {
+app.post('/generate', async (req, res) => {
   try {
     const { make, model, year, plate } = req.body;
-    if (!make || !model || !year || !plate) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
     const manifest = JSON.stringify({ make, model, year, plate });
-    const { PASSKIT_P12_BASE64, PASSKIT_P12_PASSWORD, PASSKIT_ICON_URL } = process.env;
 
-    const signature = signWithForge(manifest, PASSKIT_P12_BASE64, PASSKIT_P12_PASSWORD || '');
+    const p12Base64 = process.env.PASSKIT_P12_BASE64;
+    const password = process.env.PASSKIT_P12_PASSWORD || '';
+    const iconUrl = process.env.PASSKIT_ICON_URL || 'https://qlxnmbgtohaiyhbzfvvc.supabase.co/storage/v1/object/public/passkitfiles/icon.png';
+
+    const signature = signWithForge(manifest, p12Base64, password);
+
+    const iconRes = await fetch(iconUrl);
+    if (!iconRes.ok) throw new Error('Failed to fetch icon');
+    const iconBuffer = await iconRes.arrayBuffer();
 
     const zip = new JSZip();
     zip.file('manifest.json', manifest);
-    zip.file('signature', signature);
-
-    const iconUrl = PASSKIT_ICON_URL || 'https://qlxnmbgtohaiyhbzfvvc.supabase.co/storage/v1/object/public/passkitfiles/icon.png';
-    const iconRes = await fetch(iconUrl);
-    if (!iconRes.ok) throw new Error(`Failed to fetch icon (${iconRes.status})`);
-    const iconBuffer = await iconRes.arrayBuffer();
-    zip.file('icon.png', Buffer.from(iconBuffer));
+    zip.file('signature', signature, { binary: true });
+    zip.file('icon.png', iconBuffer);
 
     const pkpass = await zip.generateAsync({ type: 'nodebuffer' });
+
     res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
     res.setHeader('Content-Disposition', 'attachment; filename=mycar.pkpass');
     res.send(pkpass);
@@ -75,4 +72,4 @@ app.post('/generate-pass', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Pass server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
