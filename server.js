@@ -2,10 +2,8 @@ import express from 'express';
 import dotenv from 'dotenv';
 import forge from 'node-forge';
 import JSZip from 'jszip';
-import fetch from 'node-fetch';
-import fs from 'fs/promises';
+import { readFile } from 'fs/promises';
 import crypto from 'crypto';
-
 
 dotenv.config();
 
@@ -28,7 +26,7 @@ function signWithForge(manifest, p12Base64, password) {
 
   const certBag = p12.getBags({ bagType: forge.pki.oids.certBag })?.[forge.pki.oids.certBag]?.[0];
   const keyBag = p12.getBags({ bagType: forge.pki.oids.keyBag })?.[forge.pki.oids.keyBag]?.[0] ||
-                 p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })?.[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0];
+    p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })?.[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0];
 
   const cert = certBag?.cert;
   const key = keyBag?.key;
@@ -67,13 +65,18 @@ app.post('/generate', async (req, res) => {
       backgroundColor: "#01D046",
       labelColor: "#ffffff",
       foregroundColor: "#ffffff",
-      "sharingProhibited": true,
-      "logoText": "SHFT Pass",
-      "logo": "logo.png",
+      sharingProhibited: true,
+      logoText: "SHFT Pass",
       generic: {
         primaryFields: [{ key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }],
-        secondaryFields: [{ key: "transmission", label: "Transmission", value: transmission }, {key: "fuel", label: "Fuel Type", value: fuelType}],
-        auxiliaryFields: [{ key: "plate", label: "License Plate", value: plate }, {key: "body", label: "Body Type", value: bodyType}]
+        secondaryFields: [
+          { key: "transmission", label: "Transmission", value: transmission },
+          { key: "fuel", label: "Fuel Type", value: fuelType }
+        ],
+        auxiliaryFields: [
+          { key: "plate", label: "License Plate", value: plate },
+          { key: "body", label: "Body Type", value: bodyType }
+        ]
       }
     };
 
@@ -81,13 +84,9 @@ app.post('/generate', async (req, res) => {
 
     const p12Base64 = process.env.PASSKIT_P12_BASE64;
     const password = process.env.PASSKIT_P12_PASSWORD || '';
-    
-      // ✅ Load icons from root directory
-    const iconBuffer = await fs.readFile('./icon.png');
-    const icon2xBuffer = await fs.readFile('./icon@2x.png');
 
-    const iconRes = await fetch(iconUrl);
-    const icon2xRes = await fetch(icon2xUrl);
+    const iconBuffer = await readFile('./icon.png');
+    const icon2xBuffer = await readFile('./icon@2x.png');
 
     const fileBuffers = {
       'pass.json': passJSON,
