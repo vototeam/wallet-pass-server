@@ -56,10 +56,39 @@ app.post('/generate', async (req, res) => {
     if (!iconRes.ok) throw new Error('Failed to fetch icon');
     const iconBuffer = Buffer.from(await iconRes.arrayBuffer());
 
+    const passJson = {
+      description: "Vehicle Service Pass",
+      formatVersion: 1,
+      organizationName: "SHFT",
+      passTypeIdentifier: "pass.com.shft.cardocs",
+      serialNumber: plate,
+      teamIdentifier: "V7AFS9KVXW", // Replace this with your actual Apple Developer Team ID
+      backgroundColor: "rgb(255,255,255)",
+      labelColor: "rgb(0,0,0)",
+      foregroundColor: "rgb(0,0,0)",
+      generic: {
+        primaryFields: [
+          {
+            key: "vehicle",
+            label: "Vehicle",
+            value: `${year} ${make} ${model}`
+          }
+        ],
+        auxiliaryFields: [
+          {
+            key: "plate",
+            label: "License Plate",
+            value: plate
+          }
+        ]
+      }
+    };
+
     const zip = new JSZip();
     zip.file('manifest.json', Buffer.from(manifest));
-    zip.file('signature', signature);
+    zip.file('signature', Buffer.from(signature));
     zip.file('icon.png', iconBuffer);
+    zip.file('pass.json', JSON.stringify(passJson, null, 2));
 
     const pkpass = await zip.generateAsync({ type: 'nodebuffer' });
 
