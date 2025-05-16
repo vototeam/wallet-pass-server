@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import forge from 'node-forge';
 import JSZip from 'jszip';
 import fetch from 'node-fetch';
-import fs from 'fs';
+import fs from 'fs/promises';
 import crypto from 'crypto';
 
 
