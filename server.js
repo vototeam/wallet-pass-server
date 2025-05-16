@@ -66,9 +66,9 @@ app.post('/generate', async (req, res) => {
       labelColor: "#ffffff",
       foregroundColor: "#ffffff",
       sharingProhibited: true,
-      logoText: "SHFT Pass",
+      logoText: "",
       logo: "logo.png",
-      generic: {
+      storeCard: {
 
         headerFields: [
           { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }
@@ -95,14 +95,14 @@ app.post('/generate', async (req, res) => {
     const icon2xBuffer = await readFile('./icon@2x.png');
 
     const logoBuffer = await readFile('./logo.png');
-const thumbnailBuffer = await readFile('./thumbnail.png');
+const stripBuffer = await readFile('./strip.png');
 
 const fileBuffers = {
   'pass.json': passJSON,
   'icon.png': iconBuffer,
   'icon@2x.png': icon2xBuffer,
   'logo.png': logoBuffer,
-  'thumbnail.png': thumbnailBuffer
+  'strip.png': stripBuffer
 };
 
     const manifestObject = generateManifest(fileBuffers);
@@ -116,7 +116,7 @@ const fileBuffers = {
     zip.file('icon.png', iconBuffer);
     zip.file('icon@2x.png', icon2xBuffer);
     zip.file('logo.png', logoBuffer);
-zip.file('thumbnail.png', thumbnailBuffer);
+zip.file('strip.png', stripBuffer);
 
     const pkpass = await zip.generateAsync({ type: 'nodebuffer' });
 
