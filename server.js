@@ -65,8 +65,9 @@ app.post('/generate', async (req, res) => {
       teamIdentifier: "V7AFS9KVXW",
       backgroundColor: "#01D046",
       labelColor: "#ffffff",
-      foregroundColor: "#000000",
+      foregroundColor: "#ffffff",
       "sharingProhibited": true,
+      "logoText": "SHFT Pass",
       generic: {
         primaryFields: [{ key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }],
         secondaryFields: [{ key: "transmission", label: "Transmission", value: transmission }, {key: "fuel", label: "Fuel Type", value: fuelType}],
@@ -78,7 +79,7 @@ app.post('/generate', async (req, res) => {
 
     const p12Base64 = process.env.PASSKIT_P12_BASE64;
     const password = process.env.PASSKIT_P12_PASSWORD || '';
-    const iconUrl = process.env.PASSKIT_ICON_URL || 'https://qlxnmbgtohaiyhbzfvvc.supabase.co/storage/v1/object/public/passkitfiles/icon.png';
+    const iconUrl = process.env.PASSKIT_ICON_URL || 'https://qlxnmbgtohaiyhbzfvvc.supabase.co/storage/v1/object/public/passkitfiles//icon.png';
     const icon2xUrl = process.env.PASSKIT_ICON2X_URL || 'https://qlxnmbgtohaiyhbzfvvc.supabase.co/storage/v1/object/public/passkitfiles//icon@2x.png';
 
     const iconRes = await fetch(iconUrl);
