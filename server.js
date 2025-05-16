@@ -55,7 +55,7 @@ function signWithForge(manifest, p12Base64, password) {
 
 app.post('/generate', async (req, res) => {
   try {
-    const { make, model, year, plate } = req.body;
+    const { make, model, year, plate, fuelType, transmission, bodyType } = req.body;
     const passData = {
       description: "Vehicle Service Pass",
       formatVersion: 1,
@@ -66,9 +66,11 @@ app.post('/generate', async (req, res) => {
       backgroundColor: "#FFFFFF",
       labelColor: "#000000",
       foregroundColor: "#000000",
+      "sharingProhibited": true,
       generic: {
         primaryFields: [{ key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }],
-        auxiliaryFields: [{ key: "plate", label: "License Plate", value: plate }]
+        secondaryFields: [{ key: "transmission", label: "Transmission", value: transmission }, {key: "fuel", label: "Fuel Type", value: fuelType}],
+        auxiliaryFields: [{ key: "plate", label: "License Plate", value: plate }, {key: "body", label: "Body Type", value: bodyType}]
       }
     };
 
