@@ -54,7 +54,7 @@ function signWithForge(manifest, p12Base64, password) {
 
 app.post('/generate', async (req, res) => {
   try {
-    const { make, model, year, plate, fuelType, transmission, bodyType } = req.body;
+    const { make, model, year, plate, fuelType, transmission, bodyType, about } = req.body;
     const passData = {
       description: "Vehicle Service Pass",
       formatVersion: 1,
@@ -68,7 +68,7 @@ app.post('/generate', async (req, res) => {
       sharingProhibited: true,
       logoText: "",
       logo: "logo.png",
-      generic: {
+      storeCard: {
 
         headerFields: [
           { key: "IDtype", label: "Digital Card Type", value: "Car Documentation" }
@@ -76,14 +76,15 @@ app.post('/generate', async (req, res) => {
         
         primaryFields: [ { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }],
         
-        secondaryFields: [
+        auxiliaryFields: [
           { key: "transmission", label: "Transmission", value: transmission },
            { key: "fuel", label: "Fuel Type", value: fuelType },
-        ],
-        auxiliaryFields: [
-          
           { key: "plate", label: "License Plate", value: plate },
           { key: "body", label: "Body Type", value: bodyType }
+        ],
+        
+        backFields: [
+          {  key: "about car", label: "About this car", value: about }
         ]
       }
     };
@@ -97,16 +98,16 @@ app.post('/generate', async (req, res) => {
     const icon2xBuffer = await readFile('./icon@2x.png');
 
     const logoBuffer = await readFile('./logo.png');
-//const stripBuffer = await readFile('./strip.png');
-    const thumbnailBuffer = await readFile('./thumbnail.png');
+const stripBuffer = await readFile('./strip.png');
+    //const thumbnailBuffer = await readFile('./thumbnail.png');
 
 const fileBuffers = {
   'pass.json': passJSON,
   'icon.png': iconBuffer,
   'icon@2x.png': icon2xBuffer,
   'logo.png': logoBuffer,
-  //'strip.png': stripBuffer
-  'thumbnail.png': thumbnailBuffer
+  'strip.png': stripBuffer
+  //'thumbnail.png': thumbnailBuffer
 };
 
     const manifestObject = generateManifest(fileBuffers);
@@ -120,8 +121,8 @@ const fileBuffers = {
     zip.file('icon.png', iconBuffer);
     zip.file('icon@2x.png', icon2xBuffer);
     zip.file('logo.png', logoBuffer);
-//zip.file('strip.png', stripBuffer);
-    zip.file('thumbnail.png', thumbnailBuffer);
+zip.file('strip.png', stripBuffer);
+    //zip.file('thumbnail.png', thumbnailBuffer);
 
     const pkpass = await zip.generateAsync({ type: 'nodebuffer' });
 
