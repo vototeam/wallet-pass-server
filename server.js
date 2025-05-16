@@ -72,10 +72,11 @@ app.post('/generate', async (req, res) => {
         
         secondaryFields: [
           { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` },
+          { key: "transmission", label: "Transmission", value: transmission }
           
         ],
         auxiliaryFields: [
-          { key: "transmission", label: "Transmission", value: transmission },
+          
           { key: "fuel", label: "Fuel Type", value: fuelType },
           { key: "plate", label: "License Plate", value: plate },
           { key: "body", label: "Body Type", value: bodyType }
