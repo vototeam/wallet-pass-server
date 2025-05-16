@@ -1,0 +1,3 @@
+PASSKIT_P12_BASE64=your_base64_encoded_p12
+PASSKIT_P12_PASSWORD=your_p12_password
+PASSKIT_ICON_URL=https://your-icon-url/icon.png
