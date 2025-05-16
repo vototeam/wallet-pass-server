@@ -74,7 +74,7 @@ app.post('/generate', async (req, res) => {
           { key: "IDtype", label: "Digital Card Type", value: "Car Documentation" }
         ],
         
-        primaryFields: [ { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }],
+        //primaryFields: [ { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }],
         
         auxiliaryFields: [
           { key: "transmission", label: "Transmission", value: transmission },
