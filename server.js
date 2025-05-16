@@ -55,6 +55,24 @@ function signWithForge(manifest, p12Base64, password) {
 app.post('/generate', async (req, res) => {
   try {
     const { make, model, year, plate, fuelType, transmission, bodyType, driveTrain, engine, finalReview, vinNum, logoUrl } = req.body;
+
+    const headerFields = [];
+    const auxiliaryFields = [];
+    const backFields = [];
+
+    if (make || model || year) {
+      headerFields.push({ key: 'vehicle', label: 'Vehicle', value: `${year || ''} ${make || ''} ${model || ''}`.trim() });
+    }
+    if (transmission) auxiliaryFields.push({ key: 'transmission', label: 'Transmission', value: transmission });
+    if (fuelType) auxiliaryFields.push({ key: 'fuel', label: 'Fuel Type', value: fuelType });
+    if (plate) auxiliaryFields.push({ key: 'plate', label: 'License Plate', value: plate });
+    if (bodyType) auxiliaryFields.push({ key: 'body', label: 'Body Type', value: bodyType });
+
+    if (driveTrain) backFields.push({ key: 'drive', label: 'Drivetrain', value: driveTrain });
+    if (engine) backFields.push({ key: 'engine', label: 'Engine Size', value: engine });
+    if (finalReview) backFields.push({ key: 'review', label: 'Market Review', value: finalReview });
+    if (vinNum) backFields.push({ key: 'vin', label: 'VIN', value: vinNum });
+
     const passData = {
       description: "Vehicle Service Pass",
       formatVersion: 1,
@@ -69,25 +87,9 @@ app.post('/generate', async (req, res) => {
       logoText: "",
       logo: "logo.png",
       storeCard: {
-
-        headerFields: [
-          { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }
-        ],
-        
-        auxiliaryFields: [
-          { key: "transmission", label: "Transmission", value: transmission },
-           { key: "fuel", label: "Fuel Type", value: fuelType },
-          { key: "plate", label: "License Plate", value: plate },
-          { key: "body", label: "Body Type", value: bodyType }
-        ],
-        
-        backFields: [
-        
-          {  key: "drive", label: "Drivetrain", value: driveTrain },
-          {  key: "engine", label: "Engine Size", value: engine },
-          {  key: "review", label: "Market Review", value: finalReview },
-          {  key: "vin", label: "VIN", value: vinNum }
-        ]
+        headerFields,
+        auxiliaryFields,
+        backFields
       }
     };
 
