@@ -68,11 +68,13 @@ app.post('/generate', async (req, res) => {
       sharingProhibited: true,
       logoText: "",
       logo: "logo.png",
-      eventTicket: {
+      generic: {
 
         headerFields: [
-          { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }
+          { key: "IDtype", label: "Digital Card Type", value: "Car Documentation" }
         ],
+        
+        primaryFields: [ { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }],
         
         secondaryFields: [
           { key: "transmission", label: "Transmission", value: transmission },
@@ -95,14 +97,16 @@ app.post('/generate', async (req, res) => {
     const icon2xBuffer = await readFile('./icon@2x.png');
 
     const logoBuffer = await readFile('./logo.png');
-const stripBuffer = await readFile('./strip.png');
+//const stripBuffer = await readFile('./strip.png');
+    const thumbnailBuffer = await readFile('./thumbnail.png');
 
 const fileBuffers = {
   'pass.json': passJSON,
   'icon.png': iconBuffer,
   'icon@2x.png': icon2xBuffer,
   'logo.png': logoBuffer,
-  'strip.png': stripBuffer
+  //'strip.png': stripBuffer
+  'thumbnail.png': thumbnailBuffer
 };
 
     const manifestObject = generateManifest(fileBuffers);
@@ -116,7 +120,8 @@ const fileBuffers = {
     zip.file('icon.png', iconBuffer);
     zip.file('icon@2x.png', icon2xBuffer);
     zip.file('logo.png', logoBuffer);
-zip.file('strip.png', stripBuffer);
+//zip.file('strip.png', stripBuffer);
+    zip.file('thumbnail.png', thumbnailBuffer);
 
     const pkpass = await zip.generateAsync({ type: 'nodebuffer' });
 
