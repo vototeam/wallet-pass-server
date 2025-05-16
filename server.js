@@ -54,7 +54,7 @@ function signWithForge(manifest, p12Base64, password) {
 
 app.post('/generate', async (req, res) => {
   try {
-    const { make, model, year, plate, fuelType, transmission, bodyType, about } = req.body;
+    const { make, model, year, plate, fuelType, transmission, bodyType, driveTrain, engine, finalReview, vinNum } = req.body;
     const passData = {
       description: "Vehicle Service Pass",
       formatVersion: 1,
@@ -74,7 +74,7 @@ app.post('/generate', async (req, res) => {
           { key: "IDtype", label: "Digital Card Type", value: "Car Documentation" }
         ],
         
-        //primaryFields: [ { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }],
+        primaryFields: [ { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }],
         
         auxiliaryFields: [
           { key: "transmission", label: "Transmission", value: transmission },
@@ -84,7 +84,11 @@ app.post('/generate', async (req, res) => {
         ],
         
         backFields: [
-          {  key: "about car", label: "About this car", value: about }
+        
+          {  key: "drive", label: "Drivetrain", value: driveTrain },
+          {  key: "engine", label: "Engine Size", value: engine },
+          {  key: "review", label: "Market Review", value: finalReview },
+          {  key: "vin", label: "VIN", value: vinNum }
         ]
       }
     };
