@@ -68,7 +68,7 @@ app.post('/generate', async (req, res) => {
       sharingProhibited: true,
       logoText: "",
       logo: "logo.png",
-      storeCard: {
+      eventTicket: {
 
         headerFields: [
           { key: "vehicle", label: "Vehicle", value: `${year} ${make} ${model}` }
