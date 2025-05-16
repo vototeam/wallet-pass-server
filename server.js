@@ -14,37 +14,36 @@ function signWithForge(manifest, p12Base64, password) {
   const asn1 = forge.asn1.fromDer(forge.util.createBuffer(binary));
   const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, password);
 
-  console.log("🧪 Extracting all bags from P12...");
+  console.log("🧪 Extracting bags from P12...");
   const allBags = p12.getBags();
-  let signingCert = null;
-  let privateKey = null;
 
   for (const type in allBags) {
     const bags = allBags[type];
     console.log(`Found bag type: ${type} with ${bags.length} entries`);
     bags.forEach((bag, i) => {
       console.log(`  Index ${i}: FriendlyName = ${bag.friendlyName}`);
-      if (bag.cert && bag.cert.subject?.commonName === 'Pass Type ID: pass.com.shft.cardocs') {
-        console.log("  ✅ Found matching certificate by subject");
-        signingCert = bag.cert;
-      }
-      if (bag.key) {
-        console.log("  🔑 Found private key");
-        privateKey = bag.key;
-      }
+      if (bag.cert) console.log("   ✅ Found certificate");
+      if (bag.key) console.log("   🔑 Found key");
     });
   }
 
-  if (!signingCert || !privateKey) {
-    throw new Error('Missing cert or key after inspecting all bags');
+  const certBags = p12.getBags({ bagType: forge.pki.oids.certBag })?.certBags;
+  const keyBags = p12.getBags({ bagType: forge.pki.oids.keyBag })?.keyBags;
+  const shroudedBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })?.pkcs8ShroudedKeyBag;
+
+  const cert = certBags?.[0]?.cert;
+  const key = keyBags?.[0]?.key || shroudedBags?.[0]?.key;
+
+  if (!cert || !key) {
+    throw new Error('Missing cert or key');
   }
 
   const p7 = forge.pkcs7.createSignedData();
   p7.content = forge.util.createBuffer(manifest);
-  p7.addCertificate(signingCert);
+  p7.addCertificate(cert);
   p7.addSigner({
-    key: privateKey,
-    certificate: signingCert,
+    key,
+    certificate: cert,
     digestAlgorithm: forge.pki.oids.sha1,
     authenticatedAttributes: [
       { type: forge.pki.oids.contentType, value: forge.pki.oids.data },
