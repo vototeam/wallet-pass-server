@@ -88,11 +88,16 @@ app.post('/generate', async (req, res) => {
     const iconBuffer = await readFile('./icon.png');
     const icon2xBuffer = await readFile('./icon@2x.png');
 
-    const fileBuffers = {
-      'pass.json': passJSON,
-      'icon.png': iconBuffer,
-      'icon@2x.png': icon2xBuffer
-    };
+    const logoBuffer = await readFile('./logo.png');
+const thumbnailBuffer = await readFile('./thumbnail.png');
+
+const fileBuffers = {
+  'pass.json': passJSON,
+  'icon.png': iconBuffer,
+  'icon@2x.png': icon2xBuffer,
+  'logo.png': logoBuffer,
+  'thumbnail.png': thumbnailBuffer
+};
 
     const manifestObject = generateManifest(fileBuffers);
     const manifestJSON = Buffer.from(JSON.stringify(manifestObject));
@@ -104,6 +109,8 @@ app.post('/generate', async (req, res) => {
     zip.file('signature', signature, { binary: true });
     zip.file('icon.png', iconBuffer);
     zip.file('icon@2x.png', icon2xBuffer);
+    zip.file('logo.png', logoBuffer);
+zip.file('thumbnail.png', thumbnailBuffer);
 
     const pkpass = await zip.generateAsync({ type: 'nodebuffer' });
 
