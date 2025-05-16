@@ -54,7 +54,7 @@ function signWithForge(manifest, p12Base64, password) {
 
 app.post('/generate', async (req, res) => {
   try {
-    const { make, model, year, plate, fuelType, transmission, bodyType, driveTrain, engine, finalReview, vinNum } = req.body;
+    const { make, model, year, plate, fuelType, transmission, bodyType, driveTrain, engine, finalReview, vinNum, logoUrl } = req.body;
     const passData = {
       description: "Vehicle Service Pass",
       formatVersion: 1,
