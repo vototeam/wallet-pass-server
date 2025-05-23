@@ -54,7 +54,7 @@ function signWithForge(manifest, p12Base64, password) {
 
 app.post('/generate', async (req, res) => {
   try {
-    const { make, model, year, plate, fuelType, transmission, bodyType, driveTrain, engine, finalReview, vinNum, logoUrl } = req.body;
+    const { make, model, year, plate, fuelType, transmission, bodyType, driveTrain, engine, finalReview, vinNum, logoUrl, insuranceCompany, policyType, policyNumber, insuranceExpirationDate, registrationExpiryDate, fitnessExpiryDate } = req.body;
 
     const headerFields = [];
     const auxiliaryFields = [];
@@ -72,6 +72,12 @@ app.post('/generate', async (req, res) => {
     if (engine) backFields.push({ key: 'engine', label: 'Engine Size', value: engine });
     if (finalReview) backFields.push({ key: 'review', label: 'Market Review', value: finalReview });
     if (vinNum) backFields.push({ key: 'vin', label: 'VIN', value: vinNum });
+    if (insuranceCompany) backFields.push({key: 'insuranceComp', label: 'Insurance Company', value: insuranceCompany });
+    if (policyType) backFields.push({key: 'policyType', label: 'Insurance Policy Type', value: policyType });
+    if (policyNumber) backFields.push({key: 'policynumber', label: 'Insurance Policy Number', value: policyNumber });
+     if (insuranceExpirationDate) backFields.push({key: 'insuranceExp', label: 'Insurance Expiry Date', value: insuranceExpirationDate });
+     if (registrationExpiryDate) backFields.push({key: 'registrationExp', label: 'Registration Expiry Date', value: registrationExpiryDate });
+    if (fitnessExpiryDate) backFields.push({key: 'fitnessExp', label: 'Fitness Expiry Date', value: fitnessExpiryDate });
 
     const passData = {
       description: "Vehicle Service Pass",
